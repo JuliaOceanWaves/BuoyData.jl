@@ -1,7 +1,7 @@
 name = "NDBC"
 uuid = "31efde5a-9a5e-4933-8696-7df4d2d7b37b"
-authors = ["Carlos A. Michelén Ströfer <c.michelen.strofer@gmail.com>"]
 version = "0.1.0"
+authors = ["Carlos A. Michelén Ströfer <c.michelen.strofer@gmail.com>"]
 
 [deps]
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
