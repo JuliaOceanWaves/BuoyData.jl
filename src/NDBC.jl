@@ -115,8 +115,8 @@ function available()
     den = _available("swden")
     dir = _available("swdir")
     dir2 = _available("swdir2")
-    r1 = _available("swr2")
-    r2 = _available("swr1")
+    r1 = _available("swr1")
+    r2 = _available("swr2")
 
     # buoy-year combinations for which all 5 files exist
     innerjoin(den, dir, dir2, r1, r2, on=[:buoy, :year, :b_file])
