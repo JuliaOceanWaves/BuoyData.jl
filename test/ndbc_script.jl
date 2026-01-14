@@ -10,7 +10,7 @@ using Test
 include(joinpath(@__DIR__, "..", "src", "NDBC.jl"))
 using .NDBC
 
-write_gold = true
+write_gold = false
 enable_plotting = false
 gold_path = normpath(joinpath(@__DIR__, "gold", "omnidata_head.hdf5"))
 n_gold = 3
