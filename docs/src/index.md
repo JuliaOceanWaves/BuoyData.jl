@@ -26,7 +26,7 @@ swden = BuoyData.NDBC.request_omnidirectional(buoy, 2021, false)
 ### Discover available data
 
 ```julia
-using BuoyData: NDBC
+import BuoyData: NDBC
 
 all_files = NDBC.available()
 # columns: buoy, year, b_file
@@ -40,7 +40,7 @@ when requesting those files.
 ### Request wave spectra
 
 ```julia
-using BuoyData: NDBC
+import BuoyData: NDBC
 
 data = NDBC.request(46050, 2021, false)
 # AxisArray with axes: time, frequency, parameter
@@ -58,7 +58,7 @@ The returned AxisArray uses Unitful units:
 ### Read local files
 
 ```julia
-using BuoyData: NDBC
+import BuoyData: NDBC
 
 local = NDBC.read("data/41001i2015.txt.gz")
 local_swdir2 = NDBC.read("data/41001i2015.txt.gz", "swdir2")
@@ -67,7 +67,7 @@ local_swdir2 = NDBC.read("data/41001i2015.txt.gz", "swdir2")
 ### Station metadata
 
 ```julia
-using BuoyData: NDBC
+import BuoyData: NDBC
 
 meta = NDBC.metadata(46050)
 # keys include: "Latitude", "Longitude", "Water depth", "Watch circle radius"

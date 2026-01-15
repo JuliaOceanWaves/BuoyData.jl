@@ -1,23 +1,23 @@
-# NDBC.jl
+# BuoyData.jl
 
-[![CI](https://github.com/JuliaOceanWaves/NDBC.jl/actions/workflows/CI.yaml/badge.svg)](https://github.com/JuliaOceanWaves/NDBC.jl/actions/workflows/CI.yaml)
-[![Coverage](https://codecov.io/gh/JuliaOceanWaves/NDBC.jl/graph/badge.svg)](https://codecov.io/gh/JuliaOceanWaves/NDBC.jl)
-[![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaoceanwaves.github.io/NDBC.jl/dev/)
+[![CI](https://github.com/JuliaOceanWaves/BuoyData.jl/actions/workflows/CI.yaml/badge.svg)](https://github.com/JuliaOceanWaves/BuoyData.jl/actions/workflows/CI.yaml)
+[![Coverage](https://codecov.io/gh/JuliaOceanWaves/BuoyData.jl/graph/badge.svg)](https://codecov.io/gh/JuliaOceanWaves/BuoyData.jl)
+[![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaoceanwaves.github.io/BuoyData.jl/dev/)
 
-Tools for downloading and working with NOAA NDBC buoy data in Julia.
-Docs: https://juliaoceanwaves.github.io/NDBC.jl/dev/
+Tools for downloading and working with buoy data in Julia.
+Docs: https://juliaoceanwaves.github.io/BuoyData.jl/dev/
 
 ## Installation
 
 ```julia
 import Pkg
-Pkg.add(url="https://github.com/JuliaOceanWaves/NDBC.jl")
+Pkg.add(url="https://github.com/JuliaOceanWaves/BuoyData.jl")
 ```
 
 ## Quick start
 
 ```julia
-using NDBC
+import BuoyData: NDBC
 
 buoy = 46050
 
