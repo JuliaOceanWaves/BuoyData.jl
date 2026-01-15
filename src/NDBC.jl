@@ -1,8 +1,6 @@
-
 module NDBC
 
 using Dates
-
 using HTTP
 using TranscodingStreams, CodecZlib
 using DelimitedFiles
@@ -11,7 +9,7 @@ using Unitful
 using Unitful: Hz, m
 using DimensionfulAngles: °ᵃ as °
 using AxisArrays
-using Spectra
+using WaveSpectra
 
 function _available(parameter::AbstractString)
     # scrape website
@@ -110,7 +108,7 @@ function _spectrum(data::AxisArray, nDirections::Int)
 
     # Create WaveSpectra.jl Spectrum structure
     # S(f, θ) = S(f) * D(f, θ)
-    return Spectra.Spectrum(omniS .* D, data.axes[1].val, θ)
+    return WaveSpectra.Spectrum(omniS .* D, data.axes[1].val, θ)
 end
 
 """
@@ -158,9 +156,9 @@ Set `b_file=true` to request the alternate \"b\" file when available.
 function request_omnidirectional(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = false)
     data = _request("swden", buoy, year, b_file)
     time = data.axes[1]
-    S = Array{Spectra.OmnidirectionalSpectrum}(undef, length(time))
+    S = Array{WaveSpectra.OmnidirectionalSpectrum}(undef, length(time))
     for it in 1:length(time)
-        S[it] = Spectra.OmnidirectionalSpectrum(data[time[it]].data, data.axes[2].val)
+        S[it] = WaveSpectra.OmnidirectionalSpectrum(data[time[it]].data, data.axes[2].val)
     end
     S = AxisArray(S; time = time)
     return S
@@ -212,7 +210,7 @@ function request(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = fal
     time, frequency = den.axes
     parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
     data = AxisArray(cat(den, dir, dir2, r1, r2; dims = 3), time, frequency, parameter)
-    S = Array{Spectra.Spectrum}(undef, length(time))
+    S = Array{WaveSpectra.Spectrum}(undef, length(time))
     for it in 1:length(time)
         S[it] = _spectrum(data[time[it]], 360)
     end
