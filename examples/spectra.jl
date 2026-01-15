@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.20.21
 
 using Markdown
 using InteractiveUtils
@@ -121,7 +121,7 @@ function changeaxis(spectrum::AxisArray, axis::Symbol, units::Units, periodic::B
 # 	spectrum = AxisArray(data, frequency=frequency, direction=direction)
 # 	_check_spectrum(spectrum)
 # 	return spectrum
-# end
+end
 
 # ╔═╡ 2f1aa606-7676-4292-99cf-af220edf9b7f
 function integralunit(spectrum::AxisArray)

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.20.21
 
 using Markdown
 using InteractiveUtils
@@ -64,6 +64,7 @@ begin
 	years = avail_pw.year
 	# deleteat!(years, findall(x->(x==2014 || x==2015), years)) # something wrong with the data in 2014 and 2015
 	deleteat!(years, findall(x->(x==2005|| x==2007), years)) # something wrong with the data in 2014 and 2015
+	years = years[end-2:end] # trim years for the sake of this example
 end
 
 # ╔═╡ 0db51b09-b88e-43fc-aab7-637e7d4f2033
@@ -71,7 +72,7 @@ begin
 	alldata = NDBC.request_omnidirectional(buoy, years[1], bfile)
 	for i ∈ 2:5#length(years)
 		println(years[i])
-		alldata = cat(alldata, NDBC.request_omnidirectional(buoy, years[i], bfile); dims=1)
+		alldata = vcat(alldata, NDBC.request_omnidirectional(buoy, years[i], bfile))
 	end
 end
 
