@@ -84,15 +84,10 @@ function _read(file::Union{AbstractString, Vector{UInt8}}, parameter::AbstractSt
     AxisArray(data; time = dates, frequency = frequency)
 end
 
-"""
-    _spectrum(data, nDirections)
+function _convert_to_spectrum(data::AxisArray, nDirections::Int)
+    # See https://www.ndbc.noaa.gov/faq/measdes.shtml on calculating the 
+    # directional wave spectrum from the 5 parameters:
 
-Converts the 3D AxisArray (time x frequency x parameter) of NDBC directional
-spectrum data into a WaveSpectra.jl Spectrum structure. See the NDBC 
-documentation on calculating the directional wave spectrum from the 5 parameters:
-https://www.ndbc.noaa.gov/faq/measdes.shtml
-"""
-function _spectrum(data::AxisArray, nDirections::Int)
     # omnidirectional spectrum S(f)
     omniS = data[parameter = :den]
 
@@ -212,7 +207,7 @@ function request(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = fal
     data = AxisArray(cat(den, dir, dir2, r1, r2; dims = 3), time, frequency, parameter)
     S = Array{WaveSpectra.Spectrum}(undef, length(time))
     for it in 1:length(time)
-        S[it] = _spectrum(data[time[it]], 360)
+        S[it] = _convert_to_spectrum(data[time[it]], 360)
     end
     S = AxisArray(S; time = time)
     return S
