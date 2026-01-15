@@ -16,25 +16,8 @@ let
 	using DimensionfulAngles: °ᵃ as °
 	using AxisArrays
 	using WGLMakie, GeoMakie
+    using BuoyData
 end;
-
-# ╔═╡ e2646a89-0080-4f2f-a74c-76019514b6d0
-function ingredients(path::String)
-	# this is from the Julia source code (evalfile in base/loading.jl)
-	# but with the modification that it returns the module instead of the last object
-	name = Symbol(basename(path))
-	m = Module(name)
-	Core.eval(m,
-		Expr(:toplevel,
-			 :(eval(x) = $(Expr(:core, :eval))($name, x)),
-			 :(include(x) = $(Expr(:top, :include))($name, x)),
-			 :(include(mapexpr::Function, x) = $(Expr(:top, :include))(mapexpr, $name, x)),
-			 :(include($path))))
-	m
-end;
-
-# ╔═╡ dd1f542a-908e-4d03-8a0d-6760bdcf338e
-NDBC = ingredients("../src/NDBC.jl").NDBC
 
 # ╔═╡ 05df6345-42d7-488d-a247-2e955b0b5dae
 buoy = 46050;  # PACWAVE

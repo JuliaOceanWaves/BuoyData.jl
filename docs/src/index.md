@@ -1,23 +1,24 @@
-# NDBC.jl
+# BuoyData.jl
 
 ## Overview
 
-NDBC.jl provides a thin, unit-aware interface to NOAA NDBC historical buoy data.
+BuoyData.jl provides a thin, unit-aware interface to historical buoy data.
+The NDBC submodule provides access to NOAA National Data Buoy Center historical data.
 It downloads the wave spectral files, parses them into time- and frequency-indexed
 AxisArrays, and exposes helpers for common metadata queries.
 
 ## Quick start
 
 ```julia
-using NDBC
+import BuoyData
 
 buoy = 46050
 
-available = NDBC.available()
-omnidirectional = NDBC.available_omnidirectional(buoy)
+available = BuoyData.NDBC.available()
+omnidirectional = BuoyData.NDBC.available_omnidirectional(buoy)
 
-spec = NDBC.request(buoy, 2021, false)
-swden = NDBC.request_omnidirectional(buoy, 2021, false)
+spec = BuoyData.NDBC.request(buoy, 2021, false)
+swden = BuoyData.NDBC.request_omnidirectional(buoy, 2021, false)
 ```
 
 ## Detailed usage
@@ -25,7 +26,7 @@ swden = NDBC.request_omnidirectional(buoy, 2021, false)
 ### Discover available data
 
 ```julia
-using NDBC
+using BuoyData: NDBC
 
 all_files = NDBC.available()
 # columns: buoy, year, b_file
@@ -39,7 +40,7 @@ when requesting those files.
 ### Request wave spectra
 
 ```julia
-using NDBC
+using BuoyData: NDBC
 
 data = NDBC.request(46050, 2021, false)
 # AxisArray with axes: time, frequency, parameter
@@ -57,7 +58,7 @@ The returned AxisArray uses Unitful units:
 ### Read local files
 
 ```julia
-using NDBC
+using BuoyData: NDBC
 
 local = NDBC.read("data/41001i2015.txt.gz")
 local_swdir2 = NDBC.read("data/41001i2015.txt.gz", "swdir2")
@@ -66,7 +67,7 @@ local_swdir2 = NDBC.read("data/41001i2015.txt.gz", "swdir2")
 ### Station metadata
 
 ```julia
-using NDBC
+using BuoyData: NDBC
 
 meta = NDBC.metadata(46050)
 # keys include: "Latitude", "Longitude", "Water depth", "Watch circle radius"

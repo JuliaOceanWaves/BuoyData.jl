@@ -8,7 +8,7 @@ import HDF5
 using Test
 
 include(joinpath(@__DIR__, "..", "src", "NDBC.jl"))
-using .NDBC
+import BuoyData: NDBC
 
 write_gold = false
 enable_plotting = false
