@@ -9,11 +9,11 @@ makedocs(
     format = Documenter.HTML(prettyurls = get(ENV, "CI", "false") == "true"),
     pages = [
         "Home" => "index.md",
-        "API" => "api.md",
-    ],
+        "API" => "api.md"
+    ]
 )
 
 deploydocs(
     repo = "github.com/JuliaOceanWaves/NDBC.jl",
-    devbranch = "main",
+    devbranch = "main"
 )

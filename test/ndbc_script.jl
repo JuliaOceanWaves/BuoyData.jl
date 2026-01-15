@@ -61,10 +61,12 @@ if enable_plotting
     fig = WGLMakie.Figure(resolution = (1300, 1300))
     ga = GeoMakie.GeoAxis(
         fig[1, 1];
-        dest = "+proj=moll",
+        dest = "+proj=moll"
     )
-    WGLMakie.image!(ga, -180..180, -90..90, rotr90(GeoMakie.earth()); interpolate = false, inspectable = false)
-    WGLMakie.scatter!(ga, ulons, ulats, color = "tomato2", inspectable = true, inspector_label = (f, i, p) -> buoys[i])
+    WGLMakie.image!(ga, -180..180, -90..90, rotr90(GeoMakie.earth());
+        interpolate = false, inspectable = false)
+    WGLMakie.scatter!(ga, ulons, ulats, color = "tomato2", inspectable = true,
+        inspector_label = (f, i, p) -> buoys[i])
     WGLMakie.DataInspector(fig)
     display(fig)
 
@@ -101,7 +103,6 @@ ranges = ntuple(i -> 1:min(n_gold, size(Array(omnidata.data), i)), ndims(Array(o
 gold_new = Array(view(Array(omnidata.data), ranges...))
 gold_new_values = Unitful.ustrip.(gold_new)
 
-
 if write_gold
     mkpath(dirname(gold_path))
     HDF5.h5open(gold_path, "w") do f
@@ -112,7 +113,6 @@ end
 
 @test isfile(gold_path)
 if isfile(gold_path)
-
     gold_old = HDF5.h5open(gold_path, "r") do f
         read(f["omnidata_head"])
     end
