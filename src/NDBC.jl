@@ -11,6 +11,7 @@ using Unitful
 using Unitful: Hz, m
 using DimensionfulAngles: °ᵃ as °
 using AxisArrays
+using Spectra
 
 function _available(parameter::AbstractString)
     # scrape website
@@ -107,7 +108,14 @@ end
 
 
 function request_omnidirectional(buoy::Union{AbstractString,Int}, year::Int, b_file::Bool=false)
-    _request("swden", buoy, year, b_file)
+    data = _request("swden", buoy, year, b_file)
+    time = data.axes[1]
+    S = Array{Spectra.OmnidirectionalSpectrum}(undef, length(time))
+    for it in 1:length(time)
+        S[it] = Spectra.OmnidirectionalSpectrum(data[time[it]].data, data.axes[2].val)
+    end
+    S = AxisArray(S; time=time)
+    return S
 end
 
 
@@ -139,7 +147,13 @@ function request(buoy::Union{AbstractString,Int}, year::Int, b_file::Bool=false)
 
     time, frequency = den.axes
     parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
-    AxisArray(cat(den, dir, dir2, r1, r2; dims=3), time, frequency, parameter)
+    data = AxisArray(cat(den, dir, dir2, r1, r2; dims=3), time, frequency, parameter)
+    S = Array{Spectra.Spectrum}(undef, length(time))
+    for it in 1:length(time)
+        S[it] = spectrum(data[time[it]], 360)
+    end
+    S = AxisArray(S; time=time)
+    return S
 end
 
 
@@ -183,22 +197,26 @@ function metadata(buoy::Union{AbstractString,Int})
     return dict
 end
 
+function spectrum(data::AxisArray, nDirections::Int)
+    # See NDBC documentation on calculating the directional wave spectrum from the 5 parameters
+    # https://www.ndbc.noaa.gov/faq/measdes.shtml
 
-# TODO: output as wave spectra
+    # omnidirectional spectrum S(f)
+    omniS = data[parameter=:den]
 
-
-# function spectrum(data::AxisArray, angle_length::Int)
-#     # omnidirectional spectrum S(f)
-#     S = data[parameter=:den]
-#     # spread function D(f, θ)
-#     r₁ = 0.01 * data[parameter=:r1]
-#     r₂ = 0.01 * data[parameter=:r2]
-#     α₁ = data[parameter=:dir]
-#     α₂ = data[parameter=:dir2]
-#     θ =
-#     D = 1/π * (0.5 + r₁*cos(θ - α₁) + r₂*cos(2*(θ - α₂)))
-#     # Spectrum S(f, θ) = S(f) * D(f, θ)
-#     return S * D
-# end
+    # spread function D(f, θ)
+    # Note: AxisArrays currently drops axes information when multiplying values 
+    # together (e.g. 0.01*r1,  theta - a1, omniS*D)
+    r₁ = 0.01 * data[parameter=:r1]
+    r₂ = 0.01 * data[parameter=:r2]
+    α₁ = data[parameter=:dir]
+    α₂ = data[parameter=:dir2]
+    θ = Vector(0:360.0/nDirections:360-360/nDirections) * °
+    D = 1/π * (0.5 .+ r₁ .* cos.(θ' .- α₁) .+ r₂ .* cos.(2*(θ' .- α₂))) 
+    
+    # Create WaveSpectra.jl Spectrum structure
+    # S(f, θ) = S(f) * D(f, θ)
+    return Spectra.Spectrum(omniS .* D, data.axes[1].val, θ)
+end
 
 end
