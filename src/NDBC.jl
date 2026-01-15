@@ -89,6 +89,12 @@ function _read(file::Union{AbstractString,Vector{UInt8}}, parameter::AbstractStr
 end
 
 
+"""
+    read(file, parameter=nothing)
+
+Read a local NDBC data file (.txt or .txt.gz). If `parameter` is not provided,
+it is inferred from the filename.
+"""
 function read(file::AbstractString, parameter::Union{AbstractString,Nothing}=nothing)
     param_dict = Dict("w" => "swden", "d"  => "swdir", "i" => "swdir2", "j" => "swr1", "k" => "swr2")
     isnothing(parameter) && (parameter = param_dict[string(basename(file)[6])])
@@ -97,16 +103,35 @@ function read(file::AbstractString, parameter::Union{AbstractString,Nothing}=not
 end
 
 
+"""
+    available_omnidirectional()
+    available_omnidirectional(buoy)
+
+Return a DataFrame listing available omnidirectional wave spectrum files.
+
+When a `buoy` is provided, returns the available years for that buoy.
+"""
 function available_omnidirectional()
     _available("swden")
 end
 
 
+"""
+    available_omnidirectional(buoy)
+
+See `available_omnidirectional()` for details.
+"""
 function available_omnidirectional(buoy::Union{AbstractString,Int})
     _available("swden", buoy)
 end
 
 
+"""
+    request_omnidirectional(buoy, year, b_file=false)
+
+Download and parse the omnidirectional spectrum for a given buoy and year.
+Set `b_file=true` to request the alternate \"b\" file when available.
+"""
 function request_omnidirectional(buoy::Union{AbstractString,Int}, year::Int, b_file::Bool=false)
     data = _request("swden", buoy, year, b_file)
     time = data.axes[1]
@@ -119,24 +144,43 @@ function request_omnidirectional(buoy::Union{AbstractString,Int}, year::Int, b_f
 end
 
 
+"""
+    available()
+    available(buoy)
+
+Return a DataFrame listing buoy-year combinations where all five spectral
+files exist (swden, swdir, swdir2, swr1, swr2). When a `buoy` is provided,
+returns only rows for that buoy.
+"""
 function available()
     den = _available("swden")
     dir = _available("swdir")
     dir2 = _available("swdir2")
-    r1 = _available("swr2")
-    r2 = _available("swr1")
+    r1 = _available("swr1")
+    r2 = _available("swr2")
 
     # buoy-year combinations for which all 5 files exist
     innerjoin(den, dir, dir2, r1, r2, on=[:buoy, :year, :b_file])
 end
 
 
+"""
+    available(buoy)
+
+See `available()` for details.
+"""
 function available(buoy::Union{AbstractString,Int})
     data = available()
     _filterbuoy(data, buoy)
 end
 
 
+"""
+    request(buoy, year, b_file=false)
+
+Download and parse the full directional wave spectrum for a buoy and year.
+Returns an AxisArray indexed by time, frequency, and parameter.
+"""
 function request(buoy::Union{AbstractString,Int}, year::Int, b_file::Bool=false)
     buoy = string(buoy)
     den = _request("swden", buoy, year, b_file)
@@ -157,6 +201,12 @@ function request(buoy::Union{AbstractString,Int}, year::Int, b_file::Bool=false)
 end
 
 
+"""
+    metadata(buoy)
+
+Fetch station metadata for a buoy, including latitude, longitude, water depth,
+and watch circle radius. Values are returned with Unitful units.
+"""
 function metadata(buoy::Union{AbstractString,Int})
     keys = ["Water depth", "Watch circle radius"]
     url = "https://www.ndbc.noaa.gov/station_page.php?station=" * string(buoy)
