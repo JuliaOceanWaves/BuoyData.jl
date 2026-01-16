@@ -11,6 +11,8 @@ using DimensionfulAngles: °ᵃ as °
 using AxisArrays
 using WaveSpectra
 
+# TODO - combine directional and omnidirectional functions to single functions that take in a symbol. Default to directional.
+# TODO - switch to new HDF5 format on thredds?
 function _available(parameter::AbstractString)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
