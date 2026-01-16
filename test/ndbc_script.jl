@@ -78,7 +78,7 @@ end
 println("## All data for a Buoy")
 years = copy(avail_pw.year)
 deleteat!(years, findall(x -> (x == 2014 || x == 2015), years)) # data issues in 2014/2015
-years = years[end-2:end] # trim years for the sake of the test speed
+years = years[(end - 2):end] # trim years for the sake of the test speed
 
 alldata = NDBC.request(buoy, years[1], bfile)
 for i in 2:length(years)
