@@ -17,28 +17,11 @@ let
 	using AxisArrays
 	# using WGLMakie, GeoMakie
 	using Plots
+	using BuoyData
 end;
 
 # ╔═╡ e98422df-79cc-4ee9-9587-013c9a2bdc4c
 using NumericalIntegration
-
-# ╔═╡ e2646a89-0080-4f2f-a74c-76019514b6d0
-function ingredients(path::String)
-	# this is from the Julia source code (evalfile in base/loading.jl)
-	# but with the modification that it returns the module instead of the last object
-	name = Symbol(basename(path))
-	m = Module(name)
-	Core.eval(m,
-		Expr(:toplevel,
-			 :(eval(x) = $(Expr(:core, :eval))($name, x)),
-			 :(include(x) = $(Expr(:top, :include))($name, x)),
-			 :(include(mapexpr::Function, x) = $(Expr(:top, :include))(mapexpr, $name, x)),
-			 :(include($path))))
-	m
-end;
-
-# ╔═╡ dd1f542a-908e-4d03-8a0d-6760bdcf338e
-NDBC = ingredients("../src/NDBC.jl").NDBC
 
 # ╔═╡ 05df6345-42d7-488d-a247-2e955b0b5dae
 buoy = 46050;  # PACWAVE
@@ -64,7 +47,7 @@ begin
 	years = avail_pw.year
 	# deleteat!(years, findall(x->(x==2014 || x==2015), years)) # something wrong with the data in 2014 and 2015
 	deleteat!(years, findall(x->(x==2005|| x==2007), years)) # something wrong with the data in 2014 and 2015
-	years = years[end-2:end] # trim years for the sake of this example
+	years = years[end-1:end] # trim years for the sake of this example
 end
 
 # ╔═╡ 0db51b09-b88e-43fc-aab7-637e7d4f2033

@@ -1,11 +1,11 @@
 using Documenter
-using NDBC
+import BuoyData
 
-DocMeta.setdocmeta!(NDBC, :DocTestSetup, :(using NDBC); recursive = true)
+DocMeta.setdocmeta!(BuoyData, :DocTestSetup, :(import BuoyData); recursive = true)
 
 makedocs(
-    modules = [NDBC],
-    sitename = "NDBC.jl",
+    modules = [BuoyData],
+    sitename = "BuoyData.jl",
     format = Documenter.HTML(prettyurls = get(ENV, "CI", "false") == "true"),
     pages = [
         "Home" => "index.md",
@@ -14,6 +14,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/JuliaOceanWaves/NDBC.jl",
+    repo = "github.com/JuliaOceanWaves/BuoyData.jl",
     devbranch = "main"
 )
