@@ -116,7 +116,7 @@ md"""
 begin
 	years = avail_pacwave.year
 	deleteat!(years, findall(x->(x==2014 || x==2015), years)) # something wrong with the data in 2014 and 2015
-	years = years[end-2:end] # trim years for the sake of this example
+	years = years[end-1:end] # trim years for the sake of this example
 end
 
 # ╔═╡ 0db51b09-b88e-43fc-aab7-637e7d4f2033
