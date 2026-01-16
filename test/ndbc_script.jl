@@ -99,7 +99,7 @@ if enable_plotting
 end
 
 n_gold > 0 || error("n_gold must be positive")
-ranges = 1:min(n_gold, size(omnidata,1))
+ranges = 1:min(n_gold, size(omnidata, 1))
 gold_new = omnidata[ranges]
 if n_gold > 1
     gold_new_values = gold_new[1]
