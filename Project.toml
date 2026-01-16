@@ -13,3 +13,6 @@ DimensionfulAngles = "2d4b8d7a-02d9-40f9-9abe-9c695b77de0d"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[compat]
+CodecZlib = "0.7"
