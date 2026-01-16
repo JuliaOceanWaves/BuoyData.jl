@@ -8,7 +8,6 @@ import HDF5
 using Test
 
 include(joinpath(@__DIR__, "..", "src", "NDBC.jl"))
-import BuoyData: NDBC
 
 write_gold = false
 enable_plotting = false
@@ -83,7 +82,7 @@ years = years[end-2:end] # trim years for the sake of the test speed
 
 alldata = NDBC.request(buoy, years[1], bfile)
 for i in 2:length(years)
-    global alldata = cat(alldata, NDBC.request(buoy, years[i], bfile); dims = 1)
+    global alldata = vcat(alldata, NDBC.request(buoy, years[i], bfile))
 end
 
 # println("alldata size: ", size(alldata))
@@ -92,7 +91,7 @@ end
 println("## SWDen")
 omnidata = NDBC.request_omnidirectional(buoy, years[1], bfile)
 for i in 2:length(years)
-    global omnidata = cat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile); dims = 1)
+    global omnidata = vcat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile))
 end
 
 if enable_plotting
@@ -100,9 +99,17 @@ if enable_plotting
 end
 
 n_gold > 0 || error("n_gold must be positive")
-ranges = ntuple(i -> 1:min(n_gold, size(Array(omnidata.data), i)), ndims(Array(omnidata.data)))
-gold_new = Array(view(Array(omnidata.data), ranges...))
-gold_new_values = Unitful.ustrip.(gold_new)
+ranges = 1:min(n_gold, size(omnidata,1))
+gold_new = omnidata[ranges]
+if n_gold > 1
+    gold_new_values = gold_new[1]
+    for i in 2:length(gold_new)
+        gold_new_values = hcat(gold_new_values, gold_new[i])
+    end
+else
+    gold_new_values = gold_new
+end
+gold_new_values = Unitful.ustrip(gold_new_values)
 
 if write_gold
     mkpath(dirname(gold_path))

@@ -152,7 +152,7 @@ function request_omnidirectional(buoy::Union{AbstractString, Int}, year::Int, b_
     data = _request("swden", buoy, year, b_file)
     time = data.axes[1]
     S = Array{WaveSpectra.OmnidirectionalSpectrum}(undef, length(time))
-    for it in 1:length(time)
+    for it in eachindex(time)
         S[it] = WaveSpectra.OmnidirectionalSpectrum(data[time[it]].data, data.axes[2].val)
     end
     S = AxisArray(S; time = time)
@@ -206,7 +206,7 @@ function request(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = fal
     parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
     data = AxisArray(cat(den, dir, dir2, r1, r2; dims = 3), time, frequency, parameter)
     S = Array{WaveSpectra.Spectrum}(undef, length(time))
-    for it in 1:length(time)
+    for it in eachindex(time)
         S[it] = _convert_to_spectrum(data[time[it]], 360)
     end
     S = AxisArray(S; time = time)
