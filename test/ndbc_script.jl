@@ -82,7 +82,7 @@ end
 
 omnidata = NDBC.request_omnidirectional(buoy, years[1], bfile)
 for i in 2:length(years)
-    omnidata = vcat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile))
+    global omnidata = vcat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile))
 end
 
 if enable_plotting
@@ -93,7 +93,7 @@ n_data = max(1, min(n_gold, size(omnidata, 1)))
 gold_new = omnidata[1]
 if n_data > 1
     for i in 2:n_data
-        gold_new = hcat(gold_new, omnidata[i])
+        global gold_new = hcat(gold_new, omnidata[i])
     end
 end
 gold_new = Unitful.ustrip(gold_new)
