@@ -22,22 +22,18 @@ bfile = false
 
 data_dir = normpath(joinpath(@__DIR__, "..", "examples", "data"))
 
-println("## Omnidirectional")
 swden = NDBC.available_omnidirectional()
 pw_swden = NDBC.available_omnidirectional(buoy)
 data_swden = NDBC.request_omnidirectional(buoy, year, bfile)
 
-println("## Wave Spectrum")
 avail = NDBC.available()
 avail_pw = NDBC.available(buoy)
 data = NDBC.request(buoy, year, bfile)
 
-println("## Read File")
 d1 = NDBC.read(joinpath(data_dir, "41001i2015.txt.gz"))
 d2 = NDBC.read(joinpath(data_dir, "41001i2015.txt"))
 d3 = NDBC.read(joinpath(data_dir, "41001i2015.txt.gz"), "swdir2")
 
-println("## Metadata")
 metadata = NDBC.metadata(buoy)
 buoys = unique(NDBC.available()[!, :buoy])
 
@@ -62,7 +58,7 @@ if enable_plotting
         fig[1, 1];
         dest = "+proj=moll"
     )
-    WGLMakie.image!(ga, -180..180, -90..90, rotr90(GeoMakie.earth());
+    WGLMakie.image!(ga, -180 .. 180, -90 .. 90, rotr90(GeoMakie.earth());
         interpolate = false, inspectable = false)
     WGLMakie.scatter!(ga, ulons, ulats, color = "tomato2", inspectable = true,
         inspector_label = (f, i, p) -> buoys[i])
@@ -75,46 +71,37 @@ else
     println("Skipping plotting (enable_plotting = false).")
 end
 
-println("## All data for a Buoy")
 years = copy(avail_pw.year)
 deleteat!(years, findall(x -> (x == 2014 || x == 2015), years)) # data issues in 2014/2015
-years = years[(end - 2):end] # trim years for the sake of the test speed
+years = years[(end - 1):end] # trim years for the sake of the test speed
 
 alldata = NDBC.request(buoy, years[1], bfile)
 for i in 2:length(years)
     global alldata = vcat(alldata, NDBC.request(buoy, years[i], bfile))
 end
 
-# println("alldata size: ", size(alldata))
-# println("alldata type: ", typeof(alldata))
-
-println("## SWDen")
 omnidata = NDBC.request_omnidirectional(buoy, years[1], bfile)
 for i in 2:length(years)
-    global omnidata = vcat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile))
+    omnidata = vcat(omnidata, NDBC.request_omnidirectional(buoy, years[i], bfile))
 end
 
 if enable_plotting
     display(Plots.plot(Unitful.ustrip.(omnidata.data)))
 end
 
-n_gold > 0 || error("n_gold must be positive")
-ranges = 1:min(n_gold, size(omnidata, 1))
-gold_new = omnidata[ranges]
-if n_gold > 1
-    gold_new_values = gold_new[1]
-    for i in 2:length(gold_new)
-        gold_new_values = hcat(gold_new_values, gold_new[i])
+n_data = max(1, min(n_gold, size(omnidata, 1)))
+gold_new = omnidata[1]
+if n_data > 1
+    for i in 2:n_data
+        gold_new = hcat(gold_new, omnidata[i])
     end
-else
-    gold_new_values = gold_new
 end
-gold_new_values = Unitful.ustrip(gold_new_values)
+gold_new = Unitful.ustrip(gold_new)
 
 if write_gold
     mkpath(dirname(gold_path))
     HDF5.h5open(gold_path, "w") do f
-        f["omnidata_head"] = gold_new_values
+        f["omnidata_head"] = gold_new
     end
     println("Wrote gold file to: ", gold_path)
 end
@@ -125,9 +112,9 @@ if isfile(gold_path)
         read(f["omnidata_head"])
     end
 
-    @test size(gold_old) == size(gold_new_values)
+    @test size(gold_old) == size(gold_new)
 
     for idx in CartesianIndices(gold_old)
-        @test isapprox(gold_old[idx], gold_new_values[idx]; atol = tol, rtol = tol)
+        @test isapprox(gold_old[idx], gold_new[idx]; atol = tol, rtol = tol)
     end
 end
