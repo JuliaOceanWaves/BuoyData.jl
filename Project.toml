@@ -15,5 +15,8 @@ TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 WaveSpectra = "9da5bd80-4f3d-48a2-a37e-447dff2ef7bc"
 
-[sources]
-WaveSpectra = {url = "https://github.com/JuliaOceanWaves/WaveSpectra.git"}
+[sources.WaveSpectra]
+url = "https://github.com/JuliaOceanWaves/WaveSpectra.git"
+
+[compat]
+CodecZlib = "0.7"
