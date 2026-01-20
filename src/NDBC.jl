@@ -11,7 +11,6 @@ using DimensionfulAngles: °ᵃ as °
 using AxisArrays
 using WaveSpectra
 
-# TODO - combine directional and omnidirectional functions to single functions that take in a symbol. Default to directional.
 # TODO - switch to new HDF5 format on thredds?
 function _available(parameter::AbstractString)
     # scrape website
@@ -101,7 +100,7 @@ function _convert_to_spectrum(data::AxisArray, nDirections::Int)
     α₁ = data[parameter = :dir]
     α₂ = data[parameter = :dir2]
     θ = Vector(0:(360.0 / nDirections):(360 - 360 / nDirections)) * °
-    D = 1/π * (0.5 .+ r₁ .* cos.(θ' .- α₁) .+ r₂ .* cos.(2*(θ' .- α₂)))
+    D = 1 / π * (0.5 .+ r₁ .* cos.(θ' .- α₁) .+ r₂ .* cos.(2 * (θ' .- α₂)))
 
     # Create WaveSpectra.jl Spectrum structure
     # S(f, θ) = S(f) * D(f, θ)
@@ -124,95 +123,82 @@ function read(file::AbstractString, parameter::Union{AbstractString, Nothing} = 
 end
 
 """
-    available_omnidirectional()
-    available_omnidirectional(buoy)
+    available(:spectrum)
+    available(:omnidirectional_spectrum)
 
-Return a DataFrame listing available omnidirectional wave spectrum files.
-
-When a `buoy` is provided, returns the available years for that buoy.
+Return a DataFrame listing buoy-year combinations where spectral
+files exist. For type=:spectrum (default; directional), all five 
+parameters are checked (swden, swdir, swdir2, swr1, swr2). 
+For type=:omnidirectional_spectrum, only swden is used.
+When a `buoy` is provided, returns only rows for that buoy.
 """
-function available_omnidirectional()
-    _available("swden")
-end
+function available(type::Symbol = :spectrum)
+    if type == :spectrum
+        den = _available("swden")
+        dir = _available("swdir")
+        dir2 = _available("swdir2")
+        r1 = _available("swr1")
+        r2 = _available("swr2")
 
-"""
-    available_omnidirectional(buoy)
-
-See `available_omnidirectional()` for details.
-"""
-function available_omnidirectional(buoy::Union{AbstractString, Int})
-    _available("swden", buoy)
-end
-
-"""
-    request_omnidirectional(buoy, year, b_file=false)
-
-Download and parse the omnidirectional spectrum for a given buoy and year.
-Set `b_file=true` to request the alternate \"b\" file when available.
-"""
-function request_omnidirectional(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = false)
-    data = _request("swden", buoy, year, b_file)
-    time = data.axes[1]
-    S = Array{WaveSpectra.OmnidirectionalSpectrum}(undef, length(time))
-    for it in 1:length(time)
-        S[it] = WaveSpectra.OmnidirectionalSpectrum(data[time[it]].data, data.axes[2].val)
+        # buoy-year combinations for which all 5 files exist
+        return innerjoin(den, dir, dir2, r1, r2, on = [:buoy, :year, :b_file])
+    elseif type == :omnidirectional_spectrum
+        return _available("swden")
+    else
+        throw(ArgumentError("type must be a Symbol with value :spectrum or :omnidirectional_spectrum"))
     end
-    S = AxisArray(S; time = time)
-    return S
 end
 
 """
-    available()
-    available(buoy)
-
-Return a DataFrame listing buoy-year combinations where all five spectral
-files exist (swden, swdir, swdir2, swr1, swr2). When a `buoy` is provided,
-returns only rows for that buoy.
-"""
-function available()
-    den = _available("swden")
-    dir = _available("swdir")
-    dir2 = _available("swdir2")
-    r1 = _available("swr1")
-    r2 = _available("swr2")
-
-    # buoy-year combinations for which all 5 files exist
-    innerjoin(den, dir, dir2, r1, r2, on = [:buoy, :year, :b_file])
-end
-
-"""
-    available(buoy)
+    available(buoy, :spectrum)
+    available(buoy, :omnidirectional_spectrum)
 
 See `available()` for details.
 """
-function available(buoy::Union{AbstractString, Int})
-    data = available()
+function available(buoy::Union{AbstractString, Int}, type::Symbol = :spectrum)
+    data = available(type)
     _filterbuoy(data, buoy)
 end
 
 """
-    request(buoy, year, b_file=false)
+    request(buoy, year, b_file=false, type=:spectrum)
 
-Download and parse the full directional wave spectrum for a buoy and year.
-Returns an AxisArray indexed by time, frequency, and parameter.
+Download and parse the wave spectrum for a buoy and year.
+Returns an AxisArray of WaveSpectra.Spectrum or WaveSpectra.OmnidirectionalSpectrum
+structs indexed by time.
+type=:spectrum (default) returns the full directional WaveSpectra.Spectrum struct.
+type=:omnidirectional_spectrum returns the single direction WaveSpectra.OmnidirectionalSpectrum struct.
 """
-function request(buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = false)
-    buoy = string(buoy)
-    den = _request("swden", buoy, year, b_file)
-    dir = _request("swdir", buoy, year, b_file)
-    dir2 = _request("swdir2", buoy, year, b_file)
-    r1 = _request("swr1", buoy, year, b_file)
-    r2 = _request("swr2", buoy, year, b_file)
+function request(buoy::Union{AbstractString, Int}, year::Int,
+        b_file::Bool = false, type::Symbol = :spectrum)
+    if type == :spectrum
+        buoy = string(buoy)
+        den = _request("swden", buoy, year, b_file)
+        dir = _request("swdir", buoy, year, b_file)
+        dir2 = _request("swdir2", buoy, year, b_file)
+        r1 = _request("swr1", buoy, year, b_file)
+        r2 = _request("swr2", buoy, year, b_file)
 
-    time, frequency = den.axes
-    parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
-    data = AxisArray(cat(den, dir, dir2, r1, r2; dims = 3), time, frequency, parameter)
-    S = Array{WaveSpectra.Spectrum}(undef, length(time))
-    for it in 1:length(time)
-        S[it] = _convert_to_spectrum(data[time[it]], 360)
+        time, frequency = den.axes
+        parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
+        data = AxisArray(cat(den, dir, dir2, r1, r2; dims = 3), time, frequency, parameter)
+        S = Array{WaveSpectra.Spectrum}(undef, length(time))
+        for it in 1:length(time)
+            S[it] = _convert_to_spectrum(data[time[it]], 360)
+        end
+        return AxisArray(S; time = time)
+    elseif type::Symbol == :omnidirectional_spectrum
+        data = _request("swden", buoy, year, b_file)
+        time = data.axes[1]
+        S = Array{WaveSpectra.OmnidirectionalSpectrum}(undef, length(time))
+        for it in 1:length(time)
+            S[it] = WaveSpectra.OmnidirectionalSpectrum(
+                data[time[it]].data, data.axes[2].val)
+        end
+        return AxisArray(S; time = time)
+    else
+        throw(ArgumentError("type must be a Symbol with value :spectrum or :omnidirectional_spectrum"))
     end
-    S = AxisArray(S; time = time)
-    return S
 end
 
 """
