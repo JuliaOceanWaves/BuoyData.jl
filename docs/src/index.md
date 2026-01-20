@@ -15,10 +15,10 @@ import BuoyData
 buoy = 46050
 
 available = BuoyData.NDBC.available()
-omnidirectional = BuoyData.NDBC.available_omnidirectional(buoy)
+omnidirectional = BuoyData.NDBC.available(buoy, :omnidirectional_spectrum)
 
 spec = BuoyData.NDBC.request(buoy, 2021, false)
-swden = BuoyData.NDBC.request_omnidirectional(buoy, 2021, false)
+swden = BuoyData.NDBC.request(buoy, 2021, false, :omnidirectional_spectrum)
 ```
 
 ## Detailed usage
@@ -43,7 +43,8 @@ when requesting those files.
 import BuoyData: NDBC
 
 data = NDBC.request(46050, 2021, false)
-# AxisArray with axes: time, frequency, parameter
+# AxisArray with axes: time. 
+# WaveSpectra.Spectra object with axes frequency and direction
 
 using Dates
 single_time = data[time=DateTime("2021-01-01T00:40:00")]
@@ -85,8 +86,10 @@ The `swden` files are omnidirectional spectra S(f). The `swdir` and `swdir2` fil
 store mean direction and secondary direction estimates by frequency. The `swr1`
 and `swr2` files store normalized Fourier coefficients that characterize the
 spread of the directional distribution. NDBC.jl preserves this structure and
-returns AxisArrays indexed by time and frequency so you can slice and combine
+returns AxisArrays of WaveSpectra Spectra or OmnidirectionalSpectra structures
+indexed by time and frequency so you can slice and combine
 spectra directly in Julia.
 
 !!! note
     Requests download data from NOAA over HTTPS; network access is required.
+    Data is automatically cached to decrease computational and network expenses. 
