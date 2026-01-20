@@ -11,7 +11,7 @@ using DimensionfulAngles: °ᵃ as °
 using AxisArrays
 using WaveSpectra
 
-# TODO - switch to new HDF5 format on thredds?
+# TODO - switch to new HDF5 format using thredds?
 function _available(parameter::AbstractString)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
@@ -44,16 +44,29 @@ function _available(parameter::AbstractString, buoy::Union{AbstractString, Int})
     _filterbuoy(data, buoy)
 end
 
-function _request(parameter::AbstractString, buoy::Union{AbstractString, Int}, year::Int, b_file::Bool = false)
+function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
+        year::Int, b_file::Bool = false)
     # get data
     sep_dict = Dict(
         "swden" => "w", "swdir" => "d", "swdir2" => "i", "swr1" => "j", "swr2" => "k")
     sep = b_file ? sep_dict[parameter] * "b" : sep_dict[parameter]
+
     filename = string(buoy) * sep * string(year) * ".txt.gz"
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/" * filename
-    raw = transcode(GzipDecompressor, HTTP.get(url).body)
-    _read(raw, parameter)
+    cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "historical")
+
+    # If available, use cached data. If not, cache and then use data.
+    cache_file = joinpath(cache_dir, filename)
+    if !isdir(cache_dir)
+        mkpath(cache_dir)
+    end
+    if !isfile(cache_file)
+        HTTP.download(url, cache_file)
+    end
+    return read(cache_file, parameter)
+    
 end
+
 
 function _filterbuoy(data::DataFrame, buoy::Union{AbstractString, Int})
     filter!(row -> row.buoy == string(buoy), data)
@@ -171,9 +184,9 @@ type=:omnidirectional_spectrum returns the single direction WaveSpectra.Omnidire
 """
 function request(buoy::Union{AbstractString, Int}, year::Int,
         b_file::Bool = false, type::Symbol = :spectrum)
+    buoy = string(buoy)
+    den = _request("swden", buoy, year, b_file)
     if type == :spectrum
-        buoy = string(buoy)
-        den = _request("swden", buoy, year, b_file)
         dir = _request("swdir", buoy, year, b_file)
         dir2 = _request("swdir2", buoy, year, b_file)
         r1 = _request("swr1", buoy, year, b_file)
@@ -188,12 +201,11 @@ function request(buoy::Union{AbstractString, Int}, year::Int,
         end
         return AxisArray(S; time = time)
     elseif type::Symbol == :omnidirectional_spectrum
-        data = _request("swden", buoy, year, b_file)
-        time = data.axes[1]
+        time = den.axes[1]
         S = Array{WaveSpectra.OmnidirectionalSpectrum}(undef, length(time))
         for it in 1:length(time)
             S[it] = WaveSpectra.OmnidirectionalSpectrum(
-                data[time[it]].data, data.axes[2].val)
+                den[time[it]].data, den.axes[2].val)
         end
         return AxisArray(S; time = time)
     else
