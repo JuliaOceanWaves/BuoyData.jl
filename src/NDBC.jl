@@ -10,8 +10,8 @@ using Unitful: Hz, m
 using DimensionfulAngles: °ᵃ as °
 using AxisArrays
 using WaveSpectra
+using NCDatasets
 
-# TODO - switch to new HDF5 format using thredds?
 function _available(parameter::AbstractString)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
@@ -45,25 +45,39 @@ function _available(parameter::AbstractString, buoy::Union{AbstractString, Int})
 end
 
 function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
-        year::Int, b_file::Bool = false)
+        year::Int, b_file::Bool = false, source::Symbol = :historical)
     # get data
     sep_dict = Dict(
         "swden" => "w", "swdir" => "d", "swdir2" => "i", "swr1" => "j", "swr2" => "k")
     sep = b_file ? sep_dict[parameter] * "b" : sep_dict[parameter]
 
-    filename = string(buoy) * sep * string(year) * ".txt.gz"
-    url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/" * filename
-    cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "historical")
+    if source == :historical
+        filename = string(buoy) * sep * string(year) * ".txt.gz"
+        url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/" * filename
+        cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "historical")
+    elseif source == :thredds
+        # THREDDS contains all directional spectra parameters in one .nc file named using the swden seperator, "w"
+        filename = string(buoy) * "w" * string(year) * ".nc"
+        url = "https://dods.ndbc.noaa.gov/thredds/fileServer/data/" * parameter * "/" * string(buoy) * "/" * filename
+        cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "thredds")
+    else
+        throw(ArgumentError("source must be a Symbol with value :historical or :thredds"))
+    end
 
     # If available, use cached data. If not, cache and then use data.
     cache_file = joinpath(cache_dir, filename)
     if !isdir(cache_dir)
         mkpath(cache_dir)
     end
-    if !isfile(cache_file)
+    if !isfile(cache_file) || filesize(cache_file) < 500
         HTTP.download(url, cache_file)
     end
-    return read(cache_file, parameter)
+
+    if source == :historical
+        return read(cache_file, parameter)
+    elseif source == :thredds
+        return read_netcdf(cache_file, parameter)
+    end
     
 end
 
@@ -136,6 +150,32 @@ function read(file::AbstractString, parameter::Union{AbstractString, Nothing} = 
 end
 
 """
+    read_netcdf(file, parameter=nothing)
+
+Read a local NDBC THREDDS data file (.nc). If `parameter` is not provided,
+it is inferred from the filename.
+"""
+function read_netcdf(file::AbstractString, parameter::Union{AbstractString, Nothing} = nothing)
+    param_dict = Dict(
+        "w" => "swden", "d" => "swdir", "i" => "swdir2", "j" => "swr1", "k" => "swr2")
+    isnothing(parameter) && (parameter = param_dict[string(basename(file)[6])])
+    
+    short_to_long_name_dict = Dict(
+        "swden" => "spectral_wave_density", "swdir" => "mean_wave_dir", "swdir2" => "principal_wave_dir", "swr1" => "wave_spectrum_r1", "swr2" => "wave_spectrum_r1"
+    )
+    nc_parameter = short_to_long_name_dict[parameter]
+
+    unit_dict = Dict(
+        "swden" => m * m / Hz, "swdir" => °, "swdir2" => °, "swr1" => 1, "swr2" => 1)
+    ds = NCDataset(file, "r")
+    data = ds[nc_parameter][1,1,:,:] * unit_dict[parameter]
+    dates = ds["time"][:]
+    frequency = ds["frequency"][:] * Hz
+    close(ds)
+    return AxisArray(data'; time = dates, frequency = frequency)
+end
+
+"""
     available(:spectrum)
     available(:omnidirectional_spectrum)
 
@@ -181,16 +221,18 @@ Returns an AxisArray of WaveSpectra.Spectrum or WaveSpectra.OmnidirectionalSpect
 structs indexed by time.
 type=:spectrum (default) returns the full directional WaveSpectra.Spectrum struct.
 type=:omnidirectional_spectrum returns the single direction WaveSpectra.OmnidirectionalSpectrum struct.
+source=:historical (default) pulls data from NDBC's historical archive (.txt.gz files)
+source=:thredds pulls data from NDBC's THREDDS server, containing both historical and real time data (.nc files)
 """
 function request(buoy::Union{AbstractString, Int}, year::Int,
-        b_file::Bool = false, type::Symbol = :spectrum)
+        b_file::Bool = false, type::Symbol = :spectrum, source::Symbol = :historical)
     buoy = string(buoy)
-    den = _request("swden", buoy, year, b_file)
+    den = _request("swden", buoy, year, b_file, source)
     if type == :spectrum
-        dir = _request("swdir", buoy, year, b_file)
-        dir2 = _request("swdir2", buoy, year, b_file)
-        r1 = _request("swr1", buoy, year, b_file)
-        r2 = _request("swr2", buoy, year, b_file)
+        dir = _request("swdir", buoy, year, b_file, source)
+        dir2 = _request("swdir2", buoy, year, b_file, source)
+        r1 = _request("swr1", buoy, year, b_file, source)
+        r2 = _request("swr2", buoy, year, b_file, source)
 
         time, frequency = den.axes
         parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
