@@ -11,10 +11,13 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DimensionfulAngles = "2d4b8d7a-02d9-40f9-9abe-9c695b77de0d"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 WaveSpectra = "9da5bd80-4f3d-48a2-a37e-447dff2ef7bc"
-NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
 
-[sources]
-WaveSpectra = {url = "https://github.com/JuliaOceanWaves/WaveSpectra.git"}
+[sources.WaveSpectra]
+url = "https://github.com/JuliaOceanWaves/WaveSpectra.git"
+
+[compat]
+NCDatasets = "0.14"
