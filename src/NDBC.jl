@@ -12,10 +12,10 @@ using AxisArrays
 using WaveSpectra
 using NCDatasets
 
-function _available(parameter::AbstractString)
+function _available(parameter::AbstractString; http_kwargs...)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
-    raw = filter(x -> occursin(".txt.gz", x), split(String(HTTP.get(url).body)))
+    raw = filter(x -> occursin(".txt.gz", x), split(String(HTTP.get(url; http_kwargs...).body)))
     # parse
     filenames = map(x -> String(split(x, "\"")[2]), raw)
     buoys = map(x -> x[1:5], filenames)
@@ -39,13 +39,13 @@ function _available(parameter::AbstractString)
     sort!(data)
 end
 
-function _available(parameter::AbstractString, buoy::Union{AbstractString, Int})
-    data = _available(parameter)
+function _available(parameter::AbstractString, buoy::Union{AbstractString, Int}; http_kwargs...)
+    data = _available(parameter; http_kwargs...)
     _filterbuoy(data, buoy)
 end
 
 function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
-        year::Int, b_file::Bool = false, source::Symbol = :historical)
+        year::Int, b_file::Bool = false, source::Symbol = :historical; http_kwargs...)
     # get data
     sep_dict = Dict(
         "swden" => "w", "swdir" => "d", "swdir2" => "i", "swr1" => "j", "swr2" => "k")
@@ -70,7 +70,7 @@ function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
         mkpath(cache_dir)
     end
     if !isfile(cache_file) || filesize(cache_file) < 500
-        HTTP.download(url, cache_file)
+        HTTP.download(url, cache_file; http_kwargs...)
     end
 
     if source == :historical
@@ -176,8 +176,8 @@ function read_netcdf(file::AbstractString, parameter::Union{AbstractString, Noth
 end
 
 """
-    available(:spectrum)
-    available(:omnidirectional_spectrum)
+    available(:spectrum; http_kwargs...)
+    available(:omnidirectional_spectrum; http_kwargs...)
 
 Return a DataFrame listing buoy-year combinations where spectral
 files exist. For type=:spectrum (default; directional), all five 
@@ -185,36 +185,36 @@ parameters are checked (swden, swdir, swdir2, swr1, swr2).
 For type=:omnidirectional_spectrum, only swden is used.
 When a `buoy` is provided, returns only rows for that buoy.
 """
-function available(type::Symbol = :spectrum)
+function available(type::Symbol = :spectrum; http_kwargs...)
     if type == :spectrum
-        den = _available("swden")
-        dir = _available("swdir")
-        dir2 = _available("swdir2")
-        r1 = _available("swr1")
-        r2 = _available("swr2")
+        den = _available("swden"; http_kwargs...)
+        dir = _available("swdir"; http_kwargs...)
+        dir2 = _available("swdir2"; http_kwargs...)
+        r1 = _available("swr1"; http_kwargs...)
+        r2 = _available("swr2"; http_kwargs...)
 
         # buoy-year combinations for which all 5 files exist
         return innerjoin(den, dir, dir2, r1, r2, on = [:buoy, :year, :b_file])
     elseif type == :omnidirectional_spectrum
-        return _available("swden")
+        return _available("swden"; http_kwargs...)
     else
         throw(ArgumentError("type must be a Symbol with value :spectrum or :omnidirectional_spectrum"))
     end
 end
 
 """
-    available(buoy, :spectrum)
-    available(buoy, :omnidirectional_spectrum)
+    available(buoy, :spectrum; http_kwargs...)
+    available(buoy, :omnidirectional_spectrum; http_kwargs...)
 
 See `available()` for details.
 """
-function available(buoy::Union{AbstractString, Int}, type::Symbol = :spectrum)
-    data = available(type)
+function available(buoy::Union{AbstractString, Int}, type::Symbol = :spectrum; http_kwargs...)
+    data = available(type; http_kwargs...)
     _filterbuoy(data, buoy)
 end
 
 """
-    request(buoy, year, b_file=false, type=:spectrum)
+    request(buoy, year, b_file=false, type=:spectrum; http_kwargs...)
 
 Download and parse the wave spectrum for a buoy and year.
 Returns an AxisArray of WaveSpectra.Spectrum or WaveSpectra.OmnidirectionalSpectrum
@@ -225,14 +225,14 @@ source=:historical (default) pulls data from NDBC's historical archive (.txt.gz 
 source=:thredds pulls data from NDBC's THREDDS server, containing both historical and real time data (.nc files)
 """
 function request(buoy::Union{AbstractString, Int}, year::Int,
-        b_file::Bool = false, type::Symbol = :spectrum, source::Symbol = :historical)
+        b_file::Bool = false, type::Symbol = :spectrum, source::Symbol = :historical; http_kwargs...)
     buoy = string(buoy)
-    den = _request("swden", buoy, year, b_file, source)
+    den = _request("swden", buoy, year, b_file, source; http_kwargs...)
     if type == :spectrum
-        dir = _request("swdir", buoy, year, b_file, source)
-        dir2 = _request("swdir2", buoy, year, b_file, source)
-        r1 = _request("swr1", buoy, year, b_file, source)
-        r2 = _request("swr2", buoy, year, b_file, source)
+        dir = _request("swdir", buoy, year, b_file, source; http_kwargs...)
+        dir2 = _request("swdir2", buoy, year, b_file, source; http_kwargs...)
+        r1 = _request("swr1", buoy, year, b_file, source; http_kwargs...)
+        r2 = _request("swr2", buoy, year, b_file, source; http_kwargs...)
 
         time, frequency = den.axes
         parameter = AxisArrays.Axis{:parameter}([:den, :dir, :dir2, :r1, :r2])
@@ -256,15 +256,15 @@ function request(buoy::Union{AbstractString, Int}, year::Int,
 end
 
 """
-    metadata(buoy)
+    metadata(buoy; http_kwargs...)
 
 Fetch station metadata for a buoy, including latitude, longitude, water depth,
 and watch circle radius. Values are returned with Unitful units.
 """
-function metadata(buoy::Union{AbstractString, Int})
+function metadata(buoy::Union{AbstractString, Int}; http_kwargs...)
     keys = ["Water depth", "Watch circle radius"]
     url = "https://www.ndbc.noaa.gov/station_page.php?station=" * string(buoy)
-    raw = split(String(HTTP.get(url, status_exception = false).body), '\n')
+    raw = split(String(HTTP.get(url, status_exception = false; http_kwargs...).body), '\n')
     dict = Dict{String, Union{Nothing, Quantity}}()
     for key in keys
         data = filter(x -> occursin(key, x), raw)

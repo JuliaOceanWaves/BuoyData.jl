@@ -23,7 +23,7 @@ bfile = false
 data_dir = normpath(joinpath(@__DIR__, "..", "examples", "data"))
 
 swden = NDBC.available(:omnidirectional_spectrum)
-pw_swden = NDBC.available(buoy, :omnidirectional_spectrum)
+pw_swden = NDBC.available(buoy, :omnidirectional_spectrum; retries=1) # test passing keyword arguments to HTTP.request
 data_swden = NDBC.request(buoy, year, bfile, :omnidirectional_spectrum)
 
 avail = NDBC.available()
