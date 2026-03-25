@@ -23,7 +23,7 @@ bfile = false
 data_dir = normpath(joinpath(@__DIR__, "..", "examples", "data"))
 
 swden = NDBC.available(:omnidirectional_spectrum)
-pw_swden = NDBC.available(buoy, :omnidirectional_spectrum; retries=1) # test passing keyword arguments to HTTP.request
+pw_swden = NDBC.available(buoy, :omnidirectional_spectrum; retries = 1) # test passing keyword arguments to HTTP.request
 data_swden = NDBC.request(buoy, year, bfile, :omnidirectional_spectrum)
 
 avail = NDBC.available()
@@ -82,7 +82,8 @@ end
 
 omnidata = NDBC.request(buoy, years[1], bfile, :omnidirectional_spectrum)
 for i in 2:length(years)
-    global omnidata = vcat(omnidata, NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum))
+    global omnidata = vcat(
+        omnidata, NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum))
 end
 
 if enable_plotting

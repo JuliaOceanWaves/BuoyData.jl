@@ -15,7 +15,8 @@ using NCDatasets
 function _available(parameter::AbstractString; http_kwargs...)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
-    raw = filter(x -> occursin(".txt.gz", x), split(String(HTTP.get(url; http_kwargs...).body)))
+    raw = filter(
+        x -> occursin(".txt.gz", x), split(String(HTTP.get(url; http_kwargs...).body)))
     # parse
     filenames = map(x -> String(split(x, "\"")[2]), raw)
     buoys = map(x -> x[1:5], filenames)
@@ -39,7 +40,8 @@ function _available(parameter::AbstractString; http_kwargs...)
     sort!(data)
 end
 
-function _available(parameter::AbstractString, buoy::Union{AbstractString, Int}; http_kwargs...)
+function _available(
+        parameter::AbstractString, buoy::Union{AbstractString, Int}; http_kwargs...)
     data = _available(parameter; http_kwargs...)
     _filterbuoy(data, buoy)
 end
@@ -54,12 +56,15 @@ function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
     if source == :historical
         filename = string(buoy) * sep * string(year) * ".txt.gz"
         url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/" * filename
-        cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "historical")
+        cache_dir = joinpath(
+            homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "historical")
     elseif source == :thredds
         # THREDDS contains all directional spectra parameters in one .nc file named using the swden seperator, "w"
         filename = string(buoy) * "w" * string(year) * ".nc"
-        url = "https://dods.ndbc.noaa.gov/thredds/fileServer/data/" * parameter * "/" * string(buoy) * "/" * filename
-        cache_dir = joinpath(homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "thredds")
+        url = "https://dods.ndbc.noaa.gov/thredds/fileServer/data/" * parameter * "/" *
+              string(buoy) * "/" * filename
+        cache_dir = joinpath(
+            homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "thredds")
     else
         throw(ArgumentError("source must be a Symbol with value :historical or :thredds"))
     end
@@ -78,9 +83,7 @@ function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
     elseif source == :thredds
         return read_netcdf(cache_file, parameter)
     end
-    
 end
-
 
 function _filterbuoy(data::DataFrame, buoy::Union{AbstractString, Int})
     filter!(row -> row.buoy == string(buoy), data)
@@ -155,20 +158,22 @@ end
 Read a local NDBC THREDDS data file (.nc). If `parameter` is not provided,
 it is inferred from the filename.
 """
-function read_netcdf(file::AbstractString, parameter::Union{AbstractString, Nothing} = nothing)
+function read_netcdf(
+        file::AbstractString, parameter::Union{AbstractString, Nothing} = nothing)
     param_dict = Dict(
         "w" => "swden", "d" => "swdir", "i" => "swdir2", "j" => "swr1", "k" => "swr2")
     isnothing(parameter) && (parameter = param_dict[string(basename(file)[6])])
-    
+
     short_to_long_name_dict = Dict(
-        "swden" => "spectral_wave_density", "swdir" => "mean_wave_dir", "swdir2" => "principal_wave_dir", "swr1" => "wave_spectrum_r1", "swr2" => "wave_spectrum_r1"
+        "swden" => "spectral_wave_density", "swdir" => "mean_wave_dir", "swdir2" => "principal_wave_dir",
+        "swr1" => "wave_spectrum_r1", "swr2" => "wave_spectrum_r1"
     )
     nc_parameter = short_to_long_name_dict[parameter]
 
     unit_dict = Dict(
         "swden" => m * m / Hz, "swdir" => °, "swdir2" => °, "swr1" => 1, "swr2" => 1)
     ds = NCDataset(file, "r")
-    data = ds[nc_parameter][1,1,:,:] * unit_dict[parameter]
+    data = ds[nc_parameter][1, 1, :, :] * unit_dict[parameter]
     dates = ds["time"][:]
     frequency = ds["frequency"][:] * Hz
     close(ds)
@@ -208,7 +213,8 @@ end
 
 See `available()` for details.
 """
-function available(buoy::Union{AbstractString, Int}, type::Symbol = :spectrum; http_kwargs...)
+function available(
+        buoy::Union{AbstractString, Int}, type::Symbol = :spectrum; http_kwargs...)
     data = available(type; http_kwargs...)
     _filterbuoy(data, buoy)
 end
