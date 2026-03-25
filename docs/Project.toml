@@ -1,2 +1,5 @@
 [deps]
+BuoyData = "31efde5a-9a5e-4933-8696-7df4d2d7b37b"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
