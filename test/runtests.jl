@@ -1,7 +1,7 @@
-using Test
+using Test, SafeTestsets
 
-@time @testset "BuoyData.jl" begin
-    @time @testset "Test NDBC.jl" begin
-        include("ndbc_script.jl")
+@time @testset verbose=true "BuoyData.jl" begin
+    @time @safetestset "Test NDBC.jl" begin
+        include("test_ndbc.jl")
     end
 end

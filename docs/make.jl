@@ -1,5 +1,6 @@
 using Documenter
-import BuoyData
+using DocumenterCitations
+using BuoyData
 
 DocMeta.setdocmeta!(BuoyData, :DocTestSetup, :(import BuoyData); recursive = true)
 

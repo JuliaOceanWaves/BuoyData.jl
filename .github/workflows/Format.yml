@@ -1,6 +1,8 @@
 name: JuliaFormatter suggestions
 on:
   pull_request:
+    branches:
+      - main
 jobs:
   code-style:
     runs-on: ubuntu-latest
