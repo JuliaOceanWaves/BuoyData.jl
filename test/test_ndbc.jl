@@ -6,8 +6,7 @@ import Dates
 import Unitful
 import HDF5
 using Test
-
-include(joinpath(@__DIR__, "..", "src", "NDBC.jl"))
+import BuoyData: NDBC
 
 write_gold = false
 enable_plotting = false
