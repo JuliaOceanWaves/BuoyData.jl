@@ -52,7 +52,7 @@ if enable_plotting
     import GeoMakie
     import Plots
 
-    fig = WGLMakie.Figure(resolution = (1300, 1300))
+    fig = WGLMakie.Figure(size = (1300, 1300))
     ga = GeoMakie.GeoAxis(
         fig[1, 1];
         dest = "+proj=moll"
