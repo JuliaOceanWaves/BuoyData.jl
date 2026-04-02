@@ -7,9 +7,9 @@ import Unitful
 import HDF5
 using Test
 import BuoyData: NDBC
+using AxisArrays
 
 write_gold = false
-enable_plotting = false
 gold_path = normpath(joinpath(@__DIR__, "gold", "omnidata_head.hdf5"))
 n_gold = 3
 tol = 1e-6
@@ -21,73 +21,43 @@ bfile = false
 
 data_dir = normpath(joinpath(@__DIR__, "..", "examples", "data"))
 
-swden = NDBC.available(:omnidirectional_spectrum)
-pw_swden = NDBC.available(buoy, :omnidirectional_spectrum; retries = 1) # test passing keyword arguments to HTTP.request
+# Test what is available
+avail = NDBC.available()
+buoys = unique(avail[!, :buoy])
+
+available_swden = NDBC.available(:omnidirectional_spectrum)
+available_pacwave = NDBC.available(buoy, :omnidirectional_spectrum; retries = 1) # test passing keyword arguments to HTTP.request
 data_swden = NDBC.request(buoy, year, bfile, :omnidirectional_spectrum)
 
-avail = NDBC.available()
-avail_pw = NDBC.available(buoy)
-data = NDBC.request(buoy, year, bfile)
+# See metadata for a given buoy
+metadata = NDBC.metadata(buoy)
+metadata = NDBC.metadata(46053; retries = 1) # test passing keyword arguments to HTTP.request
+lats = Unitful.ustrip(metadata["Latitude"])
+lons = Unitful.ustrip(metadata["Longitude"])
 
+# Request a variety of data
+data_historical = NDBC.request(buoy, year, bfile)
+data_thredds = NDBC.request(
+    buoy, year, bfile, :omnidirectional_spectrum, :thredds; retries = 1)
 d1 = NDBC.read(joinpath(data_dir, "41001i2015.txt.gz"))
 d2 = NDBC.read(joinpath(data_dir, "41001i2015.txt"))
 d3 = NDBC.read(joinpath(data_dir, "41001i2015.txt.gz"), "swdir2")
+d4 = NDBC.read_netcdf(
+    joinpath(
+        homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "thredds", "46050w2021.nc"), "swden") # tests that data is cached and can be read directly
 
-metadata = NDBC.metadata(buoy)
-buoys = unique(NDBC.available()[!, :buoy])
-
-lats = fill(NaN, length(buoys))
-lons = fill(NaN, length(buoys))
-for i in eachindex(buoys)
-    global data = NDBC.metadata(buoys[i])
-    lats[i] = Unitful.ustrip(data["Latitude"])
-    lons[i] = Unitful.ustrip(data["Longitude"])
-end
-mask = .!isnan.(lats)
-ulats = lats[mask]
-ulons = lons[mask]
-
-if enable_plotting
-    import WGLMakie
-    import GeoMakie
-    import Plots
-
-    fig = WGLMakie.Figure(size = (1300, 1300))
-    ga = GeoMakie.GeoAxis(
-        fig[1, 1];
-        dest = "+proj=moll"
-    )
-    WGLMakie.image!(ga, -180 .. 180, -90 .. 90, rotr90(GeoMakie.earth());
-        interpolate = false, inspectable = false)
-    WGLMakie.scatter!(ga, ulons, ulats, color = "tomato2", inspectable = true,
-        inspector_label = (f, i, p) -> buoys[i])
-    WGLMakie.DataInspector(fig)
-    display(fig)
-
-    S = data_swden[time = Dates.DateTime("2021-01-01T00:40:00")]
-    display(Plots.plot(S.axes[1].val, S))
-else
-    println("Skipping plotting (enable_plotting = false).")
-end
-
-years = copy(avail_pw.year)
-deleteat!(years, findall(x -> (x == 2014 || x == 2015), years)) # data issues in 2014/2015
+years = copy(available_pacwave.year)
 years = years[(end - 1):end] # trim years for the sake of the test speed
 
-alldata = NDBC.request(buoy, years[1], bfile)
-for i in 2:length(years)
-    global alldata = vcat(alldata, NDBC.request(buoy, years[i], bfile))
-end
-
 omnidata = NDBC.request(buoy, years[1], bfile, :omnidirectional_spectrum)
+data = omnidata.data
+time = omnidata.axes[1][:]
 for i in 2:length(years)
-    global omnidata = vcat(
-        omnidata, NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum))
+    omnidata = NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum)
+    global data = vcat(data, omnidata.data)
+    global time = vcat(time, omnidata.axes[1][:])
 end
-
-if enable_plotting
-    display(Plots.plot(Unitful.ustrip.(omnidata.data)))
-end
+omnidata = AxisArray(data, time)
 
 n_data = max(1, min(n_gold, size(omnidata, 1)))
 gold_new = omnidata[1]
