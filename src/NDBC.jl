@@ -15,8 +15,27 @@ using NCDatasets
 function _available(parameter::AbstractString; http_kwargs...)
     # scrape website
     url = "https://www.ndbc.noaa.gov/data/historical/" * parameter * "/"
-    raw = filter(
-        x -> occursin(".txt.gz", x), split(String(HTTP.get(url; http_kwargs...).body)))
+    filename = parameter * ".txt"
+    cache_dir = joinpath(
+        homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "available")
+
+    # If available, use cached data. If not, cache and then use data.
+    cache_file = joinpath(cache_dir, filename)
+    if !isdir(cache_dir)
+        mkpath(cache_dir)
+    end
+    if !isfile(cache_file) || filesize(cache_file) < 500
+        raw = join(
+            filter(
+                x -> occursin(".txt.gz", x), split(String(HTTP.get(
+                    url; http_kwargs...).body))),
+            '\n')
+        io = open(cache_file, "w")
+        print(io, raw)
+        close(io)
+    end
+    raw = split(String(Base.read(cache_file)), '\n')
+
     # parse
     filenames = map(x -> String(split(x, "\"")[2]), raw)
     buoys = map(x -> x[1:5], filenames)
@@ -270,7 +289,23 @@ and watch circle radius. Values are returned with Unitful units.
 function metadata(buoy::Union{AbstractString, Int}; http_kwargs...)
     keys = ["Water depth", "Watch circle radius"]
     url = "https://www.ndbc.noaa.gov/station_page.php?station=" * string(buoy)
-    raw = split(String(HTTP.get(url, status_exception = false; http_kwargs...).body), '\n')
+    filename = string(buoy) * ".txt"
+    cache_dir = joinpath(
+        homedir(), ".cache", "JuliaOceanWaves", "BuoyData", "NDBC", "metadata")
+
+    # If available, use cached data. If not, cache and then use data.
+    cache_file = joinpath(cache_dir, filename)
+    if !isdir(cache_dir)
+        mkpath(cache_dir)
+    end
+    if !isfile(cache_file) || filesize(cache_file) < 500
+        raw = String(HTTP.get(url, status_exception = false; http_kwargs...).body)
+        io = open(cache_file, "w")
+        print(io, raw)
+        close(io)
+    end
+    raw = split(String(Base.read(cache_file)), '\n')
+
     dict = Dict{String, Union{Nothing, Quantity}}()
     for key in keys
         data = filter(x -> occursin(key, x), raw)
