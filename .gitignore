@@ -1,2 +1,3 @@
 *.vscode/
 *Manifest*
+*.ipynb_checkpoints/
