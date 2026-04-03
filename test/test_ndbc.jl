@@ -53,7 +53,7 @@ omnidata = NDBC.request(buoy, years[1], bfile, :omnidirectional_spectrum)
 data = omnidata.data
 time = omnidata.axes[1][:]
 for i in 2:length(years)
-    omnidata = NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum)
+    global omnidata = NDBC.request(buoy, years[i], bfile, :omnidirectional_spectrum)
     global data = vcat(data, omnidata.data)
     global time = vcat(time, omnidata.axes[1][:])
 end
