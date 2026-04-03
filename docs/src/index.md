@@ -97,12 +97,11 @@ All spectral and directional parameters are stored in a single NetCDF file when
 downloading data from NOAA's THREDDS server.
 NDBC.jl preserves this structure and
 returns AxisArrays of WaveSpectra Spectra or OmnidirectionalSpectra structures
-indexed by time and frequency so you can slice and combine
-spectra directly in Julia.
+indexed by time.
 
-As recorded in the [NDBC documentation](https://www.ndbc.noaa.gov/faq/measdes.shtml)
-The directional spectrum, $S(f,\theta)$ is defined by the omnidirectional spectrum, 
-$S_o(f)$ and the directional spreading function $D(f,\theta)$:
+As recorded in the [NDBC documentation](https://www.ndbc.noaa.gov/faq/measdes.shtml),
+the directional spectrum, $S(f,\theta)$, is defined by the omnidirectional spectrum, 
+$S_o(f)$, and the directional spreading function, $D(f,\theta)$:
 
 $$S(f,\theta) = S_o(f) * D(f,\theta)$$
 
