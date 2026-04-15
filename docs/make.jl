@@ -19,5 +19,6 @@ makedocs(
 
 deploydocs(
     repo = "github.com/JuliaOceanWaves/BuoyData.jl.git",
-    devbranch = "main"
+    devbranch = "main",
+    push_preview = true
 )
