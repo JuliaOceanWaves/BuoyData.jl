@@ -4,4 +4,7 @@ using Test, SafeTestsets
     @time @safetestset "Test NDBC.jl" begin
         include("test_ndbc.jl")
     end
+    @time @safetestset "Doc Tests" begin
+        include("test_doctest.jl")
+    end
 end
