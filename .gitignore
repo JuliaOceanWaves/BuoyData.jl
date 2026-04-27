@@ -1,3 +1,10 @@
 *.vscode/
 *Manifest*
 *.ipynb_checkpoints/
+# Generated plots and logs
+figs/*
+!figs/.gitignore
+*.pdf
+*.png
+*.out
+*.log

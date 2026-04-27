@@ -12,6 +12,8 @@ makedocs(
         assets = String["assets/citations.css"]),
     pages = [
         "Home" => "index.md",
+        "Quick Start" => "quickstart.md",
+        "Theory" => "theory.md",
         "API" => "api.md"
     ],
     plugins = [bib]
