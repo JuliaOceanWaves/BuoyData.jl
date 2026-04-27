@@ -14,7 +14,7 @@ makedocs(
         "Home" => "index.md",
         "Quick Start" => "quickstart.md",
         "Theory" => "theory.md",
-        "API" => "api.md",
+        "API" => "api.md"
     ],
     plugins = [bib]
 )
