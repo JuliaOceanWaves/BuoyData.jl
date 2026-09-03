@@ -94,7 +94,11 @@ function _request(parameter::AbstractString, buoy::Union{AbstractString, Int},
         mkpath(cache_dir)
     end
     if !isfile(cache_file) || filesize(cache_file) < 500
-        HTTP.download(url, cache_file; http_kwargs...)
+        open(cache_file, "w") do io
+            resp = HTTP.request("GET", url; response_stream = io, http_kwargs...)
+            @assert 200 <= resp.status < 300
+            @assert resp.body === nothing
+        end
     end
 
     if source == :historical
